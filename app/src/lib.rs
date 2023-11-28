@@ -11,71 +11,31 @@ struct TimePlotData {
 }
 
 impl TimePlotData {
-    pub fn add_chart(&mut self) {
-        self.chart_panels.set(vec![ChartPanel::default()]);
-    }
-
     pub fn has_topic(&self, data_info: &'static str) -> bool {
         self.chart_panels.with_untracked(|chart_panels| {
             chart_panels.iter().any(|chart_panel| chart_panel.has_topic(data_info))
         })
     }
 
-    pub fn add_topic(&mut self, data_info: &'static str) {
-        if self.chart_panels.with(Vec::is_empty) {
-            self.add_chart();
-        }
-
+    pub fn toggle_topic(&mut self, data_info: &'static str) {
         self.chart_panels.update(|chart| {
             if let Some(chart_panel) = chart.last_mut() {
-                chart_panel.add_topic(data_info);
+                let new_topic_buffer = TopicBuffer { identifier: data_info };
+                chart_panel.topic_buffers.update(|topic_buffers| topic_buffers.push(new_topic_buffer));
+
             }
         });
-    }
-
-    pub fn toggle_topic(&mut self, data_info: &'static str) {
-        if self.has_topic(data_info) {
-            self.remove_topic(data_info);
-        } else {
-            self.add_topic(data_info);
-        }
-    }
-
-    pub fn remove_topic(&mut self, data_info: &'static str) {
-        self.chart_panels
-            .update(|chart_panels| chart_panels.iter_mut().for_each(|chart_panel| chart_panel.remove_topic(data_info)));
     }
 }
 
 #[derive(Default, Copy, Clone, Debug)]
-pub struct ChartPanel {
+struct ChartPanel {
     topic_buffers: RwSignal<Vec<TopicBuffer>>,
 }
 
 impl ChartPanel {
-    pub fn is_empty(&self) -> bool {
-        self.topic_buffers.with(Vec::is_empty)
-    }
-
     pub fn has_topic(&self, name: &'static str) -> bool {
         self.topic_buffers.with(|topic_buffers| topic_buffers.iter().any(|topic_buffer| topic_buffer.identifier == name))
-    }
-
-    pub fn add_topic(&mut self, data_info: &'static str) {
-        let new_topic_buffer = TopicBuffer { identifier: data_info };
-
-        self.topic_buffers.update(|topic_buffers| topic_buffers.push(new_topic_buffer));
-    }
-
-    pub fn remove_topic(&mut self, data_info: &'static str) {
-        self.topic_buffers.update(|topic_buffers| {
-            topic_buffers
-                .iter()
-                .filter(|topic_buffer| topic_buffer.identifier == data_info)
-                .for_each(|_topic_buffer| {});
-
-            topic_buffers.retain(|topic_buffer| topic_buffer.identifier != data_info);
-        });
     }
 }
 
